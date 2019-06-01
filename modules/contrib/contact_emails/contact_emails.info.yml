@@ -1,0 +1,13 @@
+name: Contact Emails
+type: module
+description: Module to handle contact emails
+# core: 8.x
+dependencies:
+  - contact
+  - contact_storage
+
+# Information added by Drupal.org packaging script on 2018-11-03
+version: '8.x-1.16'
+core: '8.x'
+project: 'contact_emails'
+datestamp: 1541250893

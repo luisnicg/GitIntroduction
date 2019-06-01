@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Redirects to a message deletion form.
  *
  * @Action(
- *   id = "message_delete_action",
+ *   id = "contact_message_delete_action",
  *   label = @Translation("Delete message"),
  *   type = "contact_message",
  *   confirm_form_route_name = "entity.contact.multiple_delete_confirm"

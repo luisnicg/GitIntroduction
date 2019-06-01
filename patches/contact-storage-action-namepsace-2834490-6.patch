@@ -1,0 +1,101 @@
+diff --git a/config/install/system.action.contact_message_delete_action.yml b/config/install/system.action.contact_message_delete_action.yml
+new file mode 100644
+index 0000000..010e7c3
+--- /dev/null
++++ b/config/install/system.action.contact_message_delete_action.yml
+@@ -0,0 +1,13 @@
++langcode: en
++status: true
++dependencies:
++  enforced:
++    module:
++      - contact_storage
++  module:
++    - contact_storage
++id: contact_message_delete_action
++label: 'Delete contact message'
++type: contact_message
++plugin: contact_message_delete_action
++configuration: {  }
+diff --git a/config/install/system.action.message_delete_action.yml b/config/install/system.action.message_delete_action.yml
+deleted file mode 100644
+index e07db82..0000000
+--- a/config/install/system.action.message_delete_action.yml
++++ /dev/null
+@@ -1,13 +0,0 @@
+-langcode: en
+-status: true
+-dependencies:
+-  enforced:
+-    module:
+-      - contact_storage
+-  module:
+-    - contact_storage
+-id: message_delete_action
+-label: 'Delete message'
+-type: contact_message
+-plugin: message_delete_action
+-configuration: {  }
+diff --git a/config/schema/contact_storage.schema.yml b/config/schema/contact_storage.schema.yml
+index 7c9cf92..4f17c5d 100644
+--- a/config/schema/contact_storage.schema.yml
++++ b/config/schema/contact_storage.schema.yml
+@@ -62,6 +62,6 @@ contact_storage.settings:
+       type: boolean
+       label: 'Whether the mail should be sent as HTML'
+ 
+-action.configuration.message_delete_action:
++action.configuration.contact_message_delete_action:
+   type: action_configuration_default
+-  label: 'Delete message configuration'
++  label: 'Delete contact message configuration'
+diff --git a/contact_storage.install b/contact_storage.install
+index a406c0f..23793b1 100644
+--- a/contact_storage.install
++++ b/contact_storage.install
+@@ -120,3 +120,32 @@ function contact_storage_update_8200() {
+ function contact_storage_update_8201() {
+   \Drupal::service('module_installer')->install(['options']);
+ }
++
++/**
++ * Renames the "message_delete" action to avoid Message module conflicts.
++ */
++function contact_storage_update_8202() {
++  // Clear Action plugin cache.
++  \Drupal::service('plugin.manager.action')->clearCachedDefinitions();
++
++  $action_storage = \Drupal::entityTypeManager()->getStorage('action');
++
++  /** @var \Drupal\system\Entity\Action $action */
++  $action = $action_storage->load('message_delete_action');
++
++  // Delete the old action, if it exists.
++  if ($action && $action->getType() === 'contact_message') {
++    $action->delete();
++  }
++
++  // Create the new action, unless it already exists.
++  if (!$action_storage->load('contact_message_delete_action')) {
++    $config_install_path = \Drupal::moduleHandler()
++        ->getModule('contact_storage')
++        ->getPath() . '/' . InstallStorage::CONFIG_INSTALL_DIRECTORY;
++    $storage = new FileStorage($config_install_path);
++    $action_storage
++      ->create($storage->read('system.action.contact_message_delete_action'))
++      ->save();
++  }
++}
+diff --git a/src/Plugin/Action/DeleteMessage.php b/src/Plugin/Action/DeleteMessage.php
+index 5498fb3..cfdb692 100644
+--- a/src/Plugin/Action/DeleteMessage.php
++++ b/src/Plugin/Action/DeleteMessage.php
+@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
+  * Redirects to a message deletion form.
+  *
+  * @Action(
+- *   id = "message_delete_action",
++ *   id = "contact_message_delete_action",
+  *   label = @Translation("Delete message"),
+  *   type = "contact_message",
+  *   confirm_form_route_name = "entity.contact.multiple_delete_confirm"

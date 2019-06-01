@@ -125,32 +125,3 @@ function contact_storage_update_8200() {
 function contact_storage_update_8201() {
   \Drupal::service('module_installer')->install(['options']);
 }
-
-/**
- * Renames the "message_delete" action to avoid Message module conflicts.
- */
-function contact_storage_update_8202() {
-  // Clear Action plugin cache.
-  \Drupal::service('plugin.manager.action')->clearCachedDefinitions();
-
-  $action_storage = \Drupal::entityTypeManager()->getStorage('action');
-
-  /** @var \Drupal\system\Entity\Action $action */
-  $action = $action_storage->load('message_delete_action');
-
-  // Delete the old action, if it exists.
-  if ($action && $action->getType() === 'contact_message') {
-    $action->delete();
-  }
-
-  // Create the new action, unless it already exists.
-  if (!$action_storage->load('contact_message_delete_action')) {
-    $config_install_path = \Drupal::moduleHandler()
-        ->getModule('contact_storage')
-        ->getPath() . '/' . InstallStorage::CONFIG_INSTALL_DIRECTORY;
-    $storage = new FileStorage($config_install_path);
-    $action_storage
-      ->create($storage->read('system.action.contact_message_delete_action'))
-      ->save();
-  }
-}
